@@ -5,7 +5,7 @@
 
 <header th:replace="fragments :: header"></header>
 
-<form method="post">
+<form method="post" th:object="${event}">
     <div class="form-group">
         <label>Name
             <input th:field="${event.name}" class="form-control">
@@ -17,6 +17,30 @@
             <input th:field="${event.description}" class="form-control">
         </label>
         <p class="error" th:errors="${event.description}"></p>
+    </div>
+    <div class="form-group">
+        <label>Location
+            <input th:field="${event.location}" class="form-control">
+        </label>
+        <p class="error" th:errors="${event.location}"></p>
+    </div>
+    <div class="form-group">
+        <label>Number of Attendees
+            <input type="number" th:field="${event.numAttendees}" class="form-control">
+        </label>
+        <p class="error" th:errors="${event.numAttendees}"></p>
+    </div>
+    <div class="form-group">
+        <label>Date of Event
+            <input type="date" th:field="${event.date}" class="form-control">
+        </label>
+        <p class="error" th:errors="${event.date}"></p>
+    </div>
+    <div class="form-group">
+        <label>Attendees must register?
+            <input type="checkbox" th:field="${event.mustRegister}" class="form-control">
+        </label>
+        <p class="error" th:errors="${event.mustRegister}"></p>
     </div>
     <div class="form-group">
         <label>Contact Email

@@ -1,8 +1,11 @@
 package org.launchcode.codingevents.models;
 
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.Objects;
 
 /**
@@ -24,16 +27,62 @@ public class Event {
     @Email(message = "Invalid email. Try again.")
     private String contactEmail;
 
-    public Event(String name, String description, String contactEmail) {
+    @NotBlank(message = "Location is required")
+    private String location;
+
+    @AssertTrue(message = "Users must register")
+    private boolean mustRegister;
+
+    @Min(value = 1, message = "Must have at least 1 attendee")
+    private int numAttendees;
+
+    @Future(message = "The event date must be in the future!")
+    private Date date;
+
+    public Event(String name, String description, String contactEmail, String location, boolean mustRegister, int numAttendees, Date stringDate) {
         this.name = name;
         this.description = description;
         this.contactEmail = contactEmail;
+        this.location = location;
+        this.mustRegister = mustRegister;
+        this.numAttendees = numAttendees;
+        this.date = stringDate;
         this.id = nextId;
         nextId++;
     }
 
     public Event() {}
 
+    public Date getDate() {
+        return date;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
+    }
+
+    public int getNumAttendees() {
+        return numAttendees;
+    }
+
+    public void setNumAttendees(int numAttendees) {
+        this.numAttendees = numAttendees;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+    public boolean isMustRegister() {
+        return mustRegister;
+    }
+
+    public void setMustRegister(boolean mustRegister) {
+        this.mustRegister = mustRegister;
+    }
     public String getName() {
         return name;
     }
