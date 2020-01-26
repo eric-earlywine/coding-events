@@ -107,6 +107,7 @@ public class EventController {
             editEvent.setDescription(description);
             editEvent.setContactEmail(contactEmail);
             editEvent.setEventCategory(eventCategory);
+            eventRepository.save(editEvent);
         }
         return "redirect:";
     }
