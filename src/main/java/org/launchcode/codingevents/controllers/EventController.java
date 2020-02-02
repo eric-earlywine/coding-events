@@ -15,6 +15,8 @@ import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -40,13 +42,32 @@ public class EventController {
             model.addAttribute("events", eventRepository.findAll());
         } else {
             if (categoryId != null) {
-                Optional<EventCategory> result = eventCategoryRepository.findById(categoryId);
-                if (result.isEmpty()) {
-                    model.addAttribute("title", "Invalid Category ID: " + categoryId);
+                if (tagId == null) {
+                    Optional<EventCategory> result = eventCategoryRepository.findById(categoryId);
+                    if (result.isEmpty()) {
+                        model.addAttribute("title", "Invalid Category ID: " + categoryId);
+                    } else {
+                        EventCategory category = result.get();
+                        model.addAttribute("title", "Events in category: " + category.getName());
+                        model.addAttribute("events", category.getEvents());
+                    }
                 } else {
-                    EventCategory category = result.get();
-                    model.addAttribute("title", "Events in category: " + category.getName());
-                    model.addAttribute("events", category.getEvents());
+                    Optional<EventCategory> result1 = eventCategoryRepository.findById(categoryId);
+                    Optional<Tags> result2 = tagsRepository.findById(tagId);
+                    if (result1.isEmpty() || result2.isEmpty()) {
+                        model.addAttribute("title", "Either an invalid Category ID or Tag ID");
+                    } else {
+                        EventCategory category = result1.get();
+                        Tags tag = result2.get();
+                        List<Event> eventResults = new ArrayList<>();
+                        for (Event event : category.getEvents()) {
+                            if (tag.getEvents().contains(event)) {
+                                eventResults.add(event);
+                            }
+                        }
+                        model.addAttribute("title", "Events with category: " + category.getName() + " and Tag: " + tag.getName());
+                        model.addAttribute("events", eventResults);
+                    }
                 }
             } else {
                 Optional<Tags> result = tagsRepository.findById(tagId);
