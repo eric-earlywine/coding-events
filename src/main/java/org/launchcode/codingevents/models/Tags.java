@@ -1,6 +1,7 @@
 package org.launchcode.codingevents.models;
 
 import javax.persistence.Entity;
+import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
@@ -8,19 +9,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-public class EventCategory extends AbstractEntity {
+public class Tags extends AbstractEntity {
     @NotBlank(message = "Name is required")
     @Size(min = 3, max = 50, message = "Name must be between 3 and 50 characters")
     private String name;
 
-    @OneToMany(mappedBy = "eventCategory")
+    @ManyToMany(mappedBy = "tags")
     private final List<Event> events = new ArrayList<>();
 
-    public EventCategory(String name) {
+    public Tags(String name) {
         this.name = name;
     }
-    public EventCategory() {}
-
+    public Tags() {}
     public List<Event> getEvents() {
         return events;
     }

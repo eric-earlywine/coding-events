@@ -2,8 +2,12 @@ package org.launchcode.codingevents.controllers;
 
 import org.launchcode.codingevents.data.EventCategoryRepository;
 import org.launchcode.codingevents.data.EventRepository;
+import org.launchcode.codingevents.data.TagsRepository;
 import org.launchcode.codingevents.models.Event;
 import org.launchcode.codingevents.models.EventCategory;
+import org.launchcode.codingevents.models.EventDetails;
+import org.launchcode.codingevents.models.Tags;
+import org.launchcode.codingevents.models.dto.EventTagDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,19 +30,33 @@ public class EventController {
     @Autowired
     private EventCategoryRepository eventCategoryRepository;
 
+    @Autowired
+    private TagsRepository tagsRepository;
+
     @GetMapping
-    public String displayEvents(@RequestParam(required = false) Integer categoryId, Model model) {
-        if (categoryId == null) {
+    public String displayEvents(@RequestParam(required = false) Integer categoryId, @RequestParam(required = false) Integer tagId, Model model) {
+        if (categoryId == null && tagId == null) {
             model.addAttribute("title", "All Events");
             model.addAttribute("events", eventRepository.findAll());
         } else {
-            Optional<EventCategory> result = eventCategoryRepository.findById(categoryId);
-            if (result.isEmpty()) {
-                model.addAttribute("title", "Invalid Category ID: " + categoryId);
+            if (categoryId != null) {
+                Optional<EventCategory> result = eventCategoryRepository.findById(categoryId);
+                if (result.isEmpty()) {
+                    model.addAttribute("title", "Invalid Category ID: " + categoryId);
+                } else {
+                    EventCategory category = result.get();
+                    model.addAttribute("title", "Events in category: " + category.getName());
+                    model.addAttribute("events", category.getEvents());
+                }
             } else {
-                EventCategory category = result.get();
-                model.addAttribute("title", "Events in category: " + category.getName());
-                model.addAttribute("events", category.getEvents());
+                Optional<Tags> result = tagsRepository.findById(tagId);
+                if (result.isEmpty()) {
+                    model.addAttribute("title", "Invalid Tag ID: " + tagId);
+                } else {
+                    Tags tag = result.get();
+                    model.addAttribute("title", "Events with tag: " + tag.getName());
+                    model.addAttribute("events", tag.getEvents());
+                }
             }
         }
         return "events/index";
@@ -90,25 +108,66 @@ public class EventController {
             model.addAttribute("title", "Invalid event ID");
         } else {
             Event editEvent = result.get();
-            model.addAttribute("title", "Edit Event" + editEvent.getName() + "(id=" + editEvent.getId() + ")");
-            model.addAttribute("events", editEvent);
+            model.addAttribute("title", "Edit Event " + editEvent.getName() + "(id=" + editEvent.getId() + ")");
+            model.addAttribute("event", editEvent);
             model.addAttribute("categories", eventCategoryRepository.findAll());
         }
         return "events/edit";
     }
     @PostMapping("edit")
-    public String processEditForm(int eventId, String name, String description, String contactEmail, EventCategory eventCategory, Model model) {
-        Optional<Event> result = eventRepository.findById(eventId);
+    public String processEditForm(@ModelAttribute @Valid Event editEvent, Errors errors, Model model) {
+        Optional<Event> result = eventRepository.findById(editEvent.getId());
         if (result.isEmpty()) {
             model.addAttribute("title", "Invalid event ID");
+        } else if(errors.hasErrors()) {
+            model.addAttribute("title", "Edit Event " + editEvent.getName() + "(id=" + editEvent.getId() + ")");
+            model.addAttribute("event", editEvent);
+            model.addAttribute("categories", eventCategoryRepository.findAll());
+            return "events/edit";
         } else {
-            Event editEvent = result.get();
-            editEvent.setName(name);
-            editEvent.setDescription(description);
-            editEvent.setContactEmail(contactEmail);
-            editEvent.setEventCategory(eventCategory);
             eventRepository.save(editEvent);
         }
         return "redirect:";
+    }
+    @GetMapping("detail")
+    public String displayEvent(@RequestParam Integer eventId, Model model) {
+        Optional<Event> result = eventRepository.findById(eventId);
+        if (result.isEmpty()) {
+            model.addAttribute("title", "Invalid event ID: " + eventId);
+        } else {
+            Event event = result.get();
+            model.addAttribute("title", "Details for event: " + event.getName());
+            model.addAttribute("event", event);
+        }
+        return "events/detail";
+    }
+    @GetMapping("add-tag")
+    public String displayAddTagForm(@RequestParam Integer eventId, Model model){
+        Optional<Event> result = eventRepository.findById(eventId);
+        Event event = result.get();
+        model.addAttribute("title", "Add Tag to: " + event.getName());
+        model.addAttribute("tags", tagsRepository.findAll());
+        EventTagDTO eventTag = new EventTagDTO();
+        eventTag.setEvent(event);
+        model.addAttribute("eventTag", eventTag);
+        return "events/add-tag.html";
+    }
+
+    @PostMapping("add-tag")
+    public String processAddTagForm(@ModelAttribute @Valid EventTagDTO eventTag,
+                                    Errors errors,
+                                    Model model){
+
+        if (!errors.hasErrors()) {
+            Event event = eventTag.getEvent();
+            Tags tag = eventTag.getTag();
+            if (!event.getTags().contains(tag)){
+                event.addTag(tag);
+                eventRepository.save(event);
+            }
+            return "redirect:detail?eventId=" + event.getId();
+        }
+
+        return "redirect:add-tag";
     }
 }

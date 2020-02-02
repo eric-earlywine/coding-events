@@ -13,21 +13,7 @@ public abstract class AbstractEntity {
     @GeneratedValue
     private int id;
 
-    @NotBlank(message = "Name is required")
-    @Size(min = 3, max = 50, message = "Name must be between 3 and 50 characters")
-    private String name;
-
-    public AbstractEntity(String name) {
-        this.name = name;
-    }
     public AbstractEntity() { }
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
     public int getId() {
         return id;
     }
@@ -42,8 +28,5 @@ public abstract class AbstractEntity {
     public int hashCode() {
         return Objects.hash(id);
     }
-    @Override
-    public String toString() {
-        return name;
-    }
+
 }

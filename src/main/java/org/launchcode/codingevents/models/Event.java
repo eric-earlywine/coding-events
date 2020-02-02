@@ -1,11 +1,15 @@
 package org.launchcode.codingevents.models;
 
+import org.thymeleaf.util.ArrayUtils;
+
 import javax.persistence.*;
 import javax.validation.Valid;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -13,6 +17,10 @@ import java.util.Objects;
  */
 @Entity
 public class Event extends AbstractEntity {
+    @NotBlank(message = "Name is required")
+    @Size(min = 3, max = 50, message = "Name must be between 3 and 50 characters")
+    private String name;
+
     @ManyToOne
     @NotNull(message = "Event Category required")
     private EventCategory eventCategory;
@@ -22,8 +30,12 @@ public class Event extends AbstractEntity {
     @NotNull
     private EventDetails eventDetails;
 
-    public Event(String name, EventCategory eventCategory) {
-        super(name);
+    @ManyToMany
+    private final List<Tags> tags = new ArrayList<>();
+
+    public Event(String name, EventCategory eventCategory, EventDetails eventDetails) {
+        this.name = name;
+        this.eventDetails = eventDetails;
         this.eventCategory = eventCategory;
     }
 
@@ -43,5 +55,26 @@ public class Event extends AbstractEntity {
 
     public void setEventDetails(EventDetails eventDetails) {
         this.eventDetails = eventDetails;
+    }
+
+    public List<Tags> getTags() {
+        return tags;
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void addTag(Tags tag) {
+        this.tags.add(tag);
     }
 }
