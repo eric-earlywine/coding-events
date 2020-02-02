@@ -36,13 +36,16 @@ public class EventController {
     private TagsRepository tagsRepository;
 
     @GetMapping
-    public String displayEvents(@RequestParam(required = false) Integer categoryId, @RequestParam(required = false) Integer tagId, Model model) {
-        if (categoryId == null && tagId == null) {
+    public String displayEvents(@RequestParam(required = false) Integer categoryId, @RequestParam(required = false, value="tagId") Integer[] tagIdArr, Model model) {
+        // All events displayed
+        if (categoryId == null && tagIdArr == null) {
             model.addAttribute("title", "All Events");
             model.addAttribute("events", eventRepository.findAll());
         } else {
+            // All events with a specific category displayed
             if (categoryId != null) {
-                if (tagId == null) {
+                // All events with a specific category, but no specific tag displayed
+                if (tagIdArr == null) {
                     Optional<EventCategory> result = eventCategoryRepository.findById(categoryId);
                     if (result.isEmpty()) {
                         model.addAttribute("title", "Invalid Category ID: " + categoryId);
@@ -51,33 +54,69 @@ public class EventController {
                         model.addAttribute("title", "Events in category: " + category.getName());
                         model.addAttribute("events", category.getEvents());
                     }
-                } else {
+                }
+                // All events with a specific category and a specific tag displayed
+                else {
                     Optional<EventCategory> result1 = eventCategoryRepository.findById(categoryId);
-                    Optional<Tags> result2 = tagsRepository.findById(tagId);
-                    if (result1.isEmpty() || result2.isEmpty()) {
-                        model.addAttribute("title", "Either an invalid Category ID or Tag ID");
+                    if (result1.isEmpty()) {
+                        model.addAttribute("title", "Invalid Category ID: " + categoryId);
                     } else {
                         EventCategory category = result1.get();
-                        Tags tag = result2.get();
                         List<Event> eventResults = new ArrayList<>();
+                        String tagNames = "";
+                        boolean firstRun = true;
                         for (Event event : category.getEvents()) {
-                            if (tag.getEvents().contains(event)) {
+                            boolean eventContainsAllTags = true;
+                            for (Integer tagId : tagIdArr) {
+                                Optional<Tags> tagResult = tagsRepository.findById(tagId);
+                                if (tagResult.isEmpty()) {
+                                    model.addAttribute("title", "Invalid Tag ID: " + tagId);
+                                    return "events/index";
+                                }
+                                Tags tag = tagResult.get();
+                                if (firstRun) tagNames += tag.getName() + ", ";
+                                if (!tag.getEvents().contains(event)) {
+                                    eventContainsAllTags = false;
+                                }
+                            }
+                            if (eventContainsAllTags == true) {
                                 eventResults.add(event);
                             }
+                            firstRun = false;
                         }
-                        model.addAttribute("title", "Events with category: " + category.getName() + " and Tag: " + tag.getName());
+                        String str = "Events with category: " + category.getName() + " and Tags: " + tagNames.substring(0, tagNames.length() - 2);
+                        model.addAttribute("title", str);
                         model.addAttribute("events", eventResults);
                     }
                 }
-            } else {
-                Optional<Tags> result = tagsRepository.findById(tagId);
-                if (result.isEmpty()) {
-                    model.addAttribute("title", "Invalid Tag ID: " + tagId);
-                } else {
-                    Tags tag = result.get();
-                    model.addAttribute("title", "Events with tag: " + tag.getName());
-                    model.addAttribute("events", tag.getEvents());
+            }
+            // All events with no specific category, but at least one specific tag
+            else {
+                List<Event> eventResults = new ArrayList<>();
+                String tagNames = "";
+                boolean firstRun = true;
+                for (Event event : eventRepository.findAll()) {
+                    boolean eventContainsAllTags = true;
+                    for (Integer tagId : tagIdArr) {
+                        Optional<Tags> tagResult = tagsRepository.findById(tagId);
+                        if (tagResult.isEmpty()) {
+                            model.addAttribute("title", "Invalid Tag ID: " + tagId);
+                            return "events/index";
+                        }
+                        Tags tag = tagResult.get();
+                        if (firstRun == true) tagNames += tag.getName() + ", ";
+                        if (!tag.getEvents().contains(event)) {
+                            eventContainsAllTags = false;
+                        }
+                    }
+                    if (eventContainsAllTags == true) {
+                        eventResults.add(event);
+                    }
+                    firstRun = false;
                 }
+                String str = "Events with Tags: " + tagNames.substring(0, tagNames.length() - 2);
+                model.addAttribute("title", str);
+                model.addAttribute("events", eventResults);
             }
         }
         return "events/index";
