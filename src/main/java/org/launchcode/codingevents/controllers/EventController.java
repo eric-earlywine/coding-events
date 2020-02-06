@@ -5,7 +5,6 @@ import org.launchcode.codingevents.data.EventRepository;
 import org.launchcode.codingevents.data.TagsRepository;
 import org.launchcode.codingevents.models.Event;
 import org.launchcode.codingevents.models.EventCategory;
-import org.launchcode.codingevents.models.EventDetails;
 import org.launchcode.codingevents.models.Tags;
 import org.launchcode.codingevents.models.dto.EventTagDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -171,23 +170,31 @@ public class EventController {
             model.addAttribute("title", "Edit Event " + editEvent.getName() + "(id=" + editEvent.getId() + ")");
             model.addAttribute("event", editEvent);
             model.addAttribute("categories", eventCategoryRepository.findAll());
+            model.addAttribute("id", result.get().getId());
         }
         return "events/edit";
     }
     @PostMapping("edit")
-    public String processEditForm(@ModelAttribute @Valid Event editEvent, Errors errors, Model model) {
-        Optional<Event> result = eventRepository.findById(editEvent.getId());
-        if (result.isEmpty()) {
-            model.addAttribute("title", "Invalid event ID");
-        } else if(errors.hasErrors()) {
-            model.addAttribute("title", "Edit Event " + editEvent.getName() + "(id=" + editEvent.getId() + ")");
+    public String processEditForm(@ModelAttribute @Valid Event editEvent, Errors errors, Model model, @RequestParam int id) {
+        if(errors.hasErrors()) {
+            model.addAttribute("title", "Edit Event: " + editEvent.getName());
             model.addAttribute("event", editEvent);
             model.addAttribute("categories", eventCategoryRepository.findAll());
             return "events/edit";
-        } else {
-            eventRepository.save(editEvent);
         }
-        return "redirect:";
+        Optional<Event> result = eventRepository.findById(id);
+        if (result.isEmpty()) {
+            model.addAttribute("title", "Could not find event with ID: " + id);
+            return "redirect:";
+        }
+        else {
+            Event updateEvent = result.get();
+            updateEvent.setName(editEvent.getName());
+            updateEvent.setEventDetails(editEvent.getEventDetails());
+            updateEvent.setEventCategory(editEvent.getEventCategory());
+            eventRepository.save(updateEvent);
+            return "redirect:";
+        }
     }
     @GetMapping("detail")
     public String displayEvent(@RequestParam Integer eventId, Model model) {
